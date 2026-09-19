@@ -64,7 +64,7 @@ app.get("/", (req, res) => {
   res.send("ExamMaster API running");
 });
 
-server.listen(port, () => {
+server.listen(port, "0.0.0.0", () => {
   console.log(`Serveur démarré sur le port ${port}`);
 });
 
