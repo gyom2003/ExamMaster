@@ -1,70 +1,73 @@
-# Getting Started with Create React App
+# ExamMaster
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+L'application est composée de :
 
-## Available Scripts
+- une interface React accessible sur le port `3000` ;
+- un serveur Express et Socket.IO pour synchroniser les sessions en temps réel sur le port `3001`.
 
-In the project directory, you can run:
+## Fonctionnalités
 
-### `npm start`
+- créer une session et obtenir un code à six caractères ;
+- rejoindre une session existante avec ce code ;
+- publier une question commune ;
+- rédiger une réponse personnelle avec sauvegarde en temps réel ;
+- consulter les participants connectés et leur état de rédaction ;
+- partager sa réponse avec l'ensemble du groupe ;
+- copier le code de session pour l'envoyer aux autres participants.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Prérequis
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- Node.js et npm installés ;
+- deux terminaux ouverts dans le dossier `exam-app`.
 
-### `npm test`
+## Installation
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+npm install
+```
 
-### `npm run build`
+## Lancement en développement
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Dans un premier terminal, démarrez le serveur temps réel :
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+npm run start:server
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Dans un second terminal, démarrez l'interface React :
 
-### `npm run eject`
+```bash
+npm start
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Ouvrez ensuite [http://localhost:3000](http://localhost:3000). Le serveur Socket.IO est disponible sur [http://localhost:3001](http://localhost:3001).
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Pour utiliser l'application :
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+1. saisissez votre prénom ;
+2. créez une session ou entrez le code d'une session existante ;
+3. posez une question et rédigez votre réponse ;
+4. partagez votre réponse lorsque vous êtes prêt.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Une session peut aussi être ouverte avec un code déjà renseigné dans l'URL : `http://localhost:3000/?session=ABC123`.
 
-## Learn More
+## Scripts disponibles
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+| Commande | Description |
+| --- | --- |
+| `npm start` | Lance l'interface React en mode développement. |
+| `npm run start:server` | Lance le serveur Express et Socket.IO sur le port `3001`. |
+| `npm test` | Lance les tests avec Jest et Testing Library. |
+| `npm run build` | Génère la version de production dans `build/`. |
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Structure du projet
 
-### Code Splitting
+```text
+src/
+├── components/       Composants de question, réponse et participants
+├── pages/             Écrans d'accueil et de session
+├── services/          Client Socket.IO
+└── server/            Serveur Express et événements Socket.IO
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Les événements temps réel principaux sont `session:create`, `session:join`, `question:set`, `answer:update` et `answer:share`.
