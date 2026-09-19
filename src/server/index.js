@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
@@ -5,14 +7,16 @@ const { Server } = require("socket.io");
 const crypto = require("crypto");
 
 const app = express();
+const port = process.env.PORT || 3001;
+const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
 
-app.use(cors());
+app.use(cors({ origin: frontendUrl }));
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: frontendUrl,
     methods: ["GET", "POST"],
   },
 });
@@ -60,8 +64,8 @@ app.get("/", (req, res) => {
   res.send("ExamMaster API running");
 });
 
-server.listen(3001, () => {
-  console.log("Serveur démarré sur http://localhost:3001");
+server.listen(port, () => {
+  console.log(`Serveur démarré sur le port ${port}`);
 });
 
 //creation d'une session (connect, join, set question, set answer, reveal answer)
