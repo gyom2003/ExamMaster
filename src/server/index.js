@@ -8,15 +8,18 @@ const crypto = require("crypto");
 
 const app = express();
 const port = process.env.PORT || 3001;
-const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
+const frontendUrls = (process.env.FRONTEND_URL || "http://localhost:3000")
+  .split(",")
+  .map((url) => url.trim().replace(/\/$/, ""))
+  .filter(Boolean);
 
-app.use(cors({ origin: frontendUrl }));
+app.use(cors({ origin: frontendUrls }));
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: frontendUrl,
+    origin: frontendUrls,
     methods: ["GET", "POST"],
   },
 });
