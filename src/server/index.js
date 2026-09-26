@@ -44,16 +44,17 @@ function createUser(userId, name) {
 }
 
 //suivi etat de la session par la socket
-async function sendSessionState(code) {
+function sendSessionState(code) {
   const session = sessions.get(code);
 
   if (!session) {
     return;
   }
 
-  const sockets = await io.in(code).fetchSockets();
-
-  for (const currentSocket of sockets) {
+  const socketIds = io.sockets.adapter.rooms.get(code) || new Set();
+  for (const socketId of socketIds) {
+    const currentSocket = io.sockets.sockets.get(socketId);
+    if (!currentSocket) continue;
     const viewerId = currentSocket.data.userId;
 
     currentSocket.emit(
@@ -88,6 +89,7 @@ io.on("connection", (socket) => {
       userId,
       createUser(userId, name)
     );  
+    session.users.get(userId).socketId = socket.id;
 
     sessions.set(code, session);
 
@@ -122,6 +124,7 @@ io.on("connection", (socket) => {
     userId,
     createUser(userId, name)
   );
+  session.users.get(userId).socketId = socket.id;
 
   socket.join(normalizedCode);
 
@@ -160,6 +163,7 @@ io.on("connection", (socket) => {
   sendSessionState(code);
 });
 
+  //func msise à jour de la réponse de l'utilisateur
   socket.on("answer:update", ({ text }) => {
   const code = socket.data.sessionCode;
   const userId = socket.data.userId;
@@ -176,9 +180,9 @@ io.on("connection", (socket) => {
     return;
   }
 
-  user.answer = text;
+  user.answer = sanitizeAnswer(text);
 
-  sendSessionState(code);
+  socket.emit("session:update", buildStateForUser(session, userId));
 });
 
   socket.on("answer:share", () => {
@@ -196,18 +200,43 @@ io.on("connection", (socket) => {
     }
     sendSessionState(code);
   });
+
+  socket.on("disconnect", () => {
+    const code = socket.data.sessionCode;
+    const userId = socket.data.userId;
+    const session = sessions.get(code);
+    const user = session?.users.get(userId);
+
+    if (!session || !user || user.socketId !== socket.id) return;
+
+    session.users.delete(userId);
+    if (session.users.size === 0) {
+      sessions.delete(code);
+      return;
+    }
+    sendSessionState(code);
+  });
 });
 
 //logique d'envoie de réponse
 function buildStateForUser(session, viewerId) {
   const users = [];
+  const questionAuthorId = session.question?.authorId;
+  const hasPublishedResponse = [...session.users.values()].some(
+    (user) => user.id !== questionAuthorId && user.revealedTo.size > 0
+  );
 
   for (const user of session.users.values()) {
     const isMe = user.id === viewerId;
 
+    const isCorrectAnswer =
+      user.id === questionAuthorId &&
+      Boolean(user.answer.trim()) &&
+      (isMe || hasPublishedResponse);
     const answerVisible =
       isMe ||
-      user.revealedTo.has(viewerId);
+      user.revealedTo.has(viewerId) ||
+      isCorrectAnswer;
 
     users.push({
       id: user.id,
@@ -216,6 +245,7 @@ function buildStateForUser(session, viewerId) {
       answerRevealed: answerVisible,
       answerShared: user.revealedTo.size > 0,
       revealedToMe: user.revealedTo.has(viewerId),
+      isCorrectAnswer,
     });
   }
 
@@ -224,5 +254,11 @@ function buildStateForUser(session, viewerId) {
     question: session.question,
     users,
   };
+}
+
+function sanitizeAnswer(value) {
+  return String(value || "")
+    .replace(/<\s*(\/?)\s*(strong|b|em|i|br|p)\b[^>]*>/gi, "<$1$2>")
+    .replace(/<[^>]*>/g, "");
 }
 
