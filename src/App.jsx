@@ -4,12 +4,6 @@ import "./App.css";
 import HomePage from "./pages/HomePage";
 import Session from "./pages/Session";
 import socket from "./services/socket";
-import { createClient } from "@supabase/supabase-js";
-
-export const supabase = createClient(
-  process.env.REACT_APP_SUPABASE_URL,
-  process.env.REACT_APP_SUPABASE_PUBLISHABLE_KEY
-);
 
 const createIdentityId = () => window.crypto?.randomUUID?.() || Date.now().toString(36);
 
