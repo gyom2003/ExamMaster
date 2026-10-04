@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model answers {
+  id             BigInt       @id @default(autoincrement())
+  question_id    BigInt
+  participant_id BigInt
+  content        String       @default("")
+  created_at     DateTime     @default(now()) @db.Timestamptz(6)
+  shared_at      DateTime?    @db.Timestamptz(6)
+  participants   participants @relation(fields: [participant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  questions      questions    @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([question_id, participant_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model participants {
+  id         BigInt      @id @default(autoincrement())
+  session_id BigInt
+  user_id    String?
+  name       String      @db.VarChar(200)
+  answers    answers[]
+  sessions   sessions    @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  questions  questions[]
+
+  @@unique([session_id, user_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model questions {
+  id           BigInt        @id @default(autoincrement())
+  session_id   BigInt
+  author_id    BigInt?
+  content      String
+  created_at   DateTime      @default(now()) @db.Timestamptz(6)
+  answers      answers[]
+  participants participants? @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sessions     sessions      @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sessions {
+  id           BigInt         @id @default(autoincrement())
+  code         String         @unique @db.VarChar(6)
+  creator_id   String?
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  participants participants[]
+  questions    questions[]
+}

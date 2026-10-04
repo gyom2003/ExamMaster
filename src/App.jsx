@@ -4,6 +4,12 @@ import "./App.css";
 import HomePage from "./pages/HomePage";
 import Session from "./pages/Session";
 import socket from "./services/socket";
+import { createClient } from "@supabase/supabase-js";
+
+export const supabase = createClient(
+  process.env.REACT_APP_SUPABASE_URL,
+  process.env.REACT_APP_SUPABASE_PUBLISHABLE_KEY
+);
 
 const createIdentityId = () => window.crypto?.randomUUID?.() || Date.now().toString(36);
 
@@ -20,8 +26,15 @@ function App() {
       setScreen("session");
       setError("");
     };
+    const handleSessionError = ({ message }) => {
+      setError(message || "Une erreur est survenue pendant l'enregistrement.");
+    };
     socket.on("session:update", handleState);
-    return () => socket.off("session:update", handleState);
+    socket.on("session:error", handleSessionError);
+    return () => {
+      socket.off("session:update", handleState);
+      socket.off("session:error", handleSessionError);
+    };
   }, []);
 
   const enterSession = ({ mode, name, code }) => {
